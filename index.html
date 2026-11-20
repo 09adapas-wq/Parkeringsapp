@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#FFA31A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="RUTA">
+  <title>RUTA – Parkering</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-shell" id="app">
+
+    <!-- STATUSFÄLT -->
+    <div class="status-bar">
+      <span id="status-clock">14:30</span>
+      <div class="status-icons">
+        <span class="icon-signal"></span>
+        <span class="icon-wifi"></span>
+        <span class="icon-battery"></span>
+      </div>
+    </div>
+
+    <!-- ==================== VY 1: KARTA · HITTA PARKERING ==================== -->
+    <section class="view active" id="view-map" data-tab="map">
+      <header class="top-bar">
+        <button type="button" class="brand-logo-wrap" data-go="map" aria-label="RUTA startsida">
+          <img src="logga.jpg"
+               data-fallbacks="logga.png,logo.jpg,logo.png,Gemini_Generated_Image_fs422ifs422ifs42_2.jpg,Gemini_Generated_Image_fs422ifs422ifs42.jpg"
+               alt="RUTA logotyp"
+               class="brand-logo-img">
+          <svg class="brand-logo-fallback" viewBox="0 0 260 100" aria-hidden="true">
+            <rect x="4" y="4" width="252" height="92" rx="16" fill="#FB9504"/>
+            <text x="26" y="71" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="60" letter-spacing="1">RUT</text>
+            <rect x="172" y="13" width="74" height="74" rx="12" fill="#104184"/>
+            <rect x="176" y="17" width="66" height="66" rx="9" fill="none" stroke="#FFFFFF" stroke-width="3.2"/>
+            <text x="209" y="70" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="56">A</text>
+          </svg>
+        </button>
+
+        <div class="row-gap-xs">
+          <button class="active-pill-shortcut" id="btn-active-shortcut" title="Aktiva parkeringar" style="display:none;">
+            <span class="pulse-dot"></span>
+            <span id="active-shortcut-label">1 aktiv</span>
+          </button>
+          <button class="icon-btn" data-toast="Inga nya notiser just nu" aria-label="Notiser">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="zone-search-input" placeholder="Sök zon, namn eller kod (t.ex. A, Shopping, 1064)" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- INTERAKTIV ZOOM-, ROTER- OCH DRAGBAR ORIGINALBILD -->
+      <div class="map-area map-tall" id="main-map-viewport">
+        <div class="map-canvas" id="main-map-canvas">
+          <img src="karta.jpeg"
+               data-fallbacks="karta.jpg,Gemini_Generated_Image_3.jpeg,Gemini_Generated_Image_2.jpeg,Gemini_Generated_Image.jpeg,karta.png"
+               alt="Områdeskarta med parkeringszoner"
+               class="map-original-img"
+               id="main-map-img"
+               draggable="false">
+
+          <!-- Zon D: Norra Hamnen -->
+          <button type="button" class="zone-pin" style="top: 21%; left: 52%;" data-select-zone="1075">
+            <span class="pin-letter">D</span> <span data-pin-free="1075">11 lediga</span>
+          </button>
+
+          <!-- Zon B: Shopping & Pool -->
+          <button type="button" class="zone-pin" style="top: 47%; left: 48%;" data-select-zone="1053">
+            <span class="pin-letter">B</span> <span data-pin-free="1053">14 lediga</span>
+          </button>
+
+          <!-- Zon C: Skogsparkeringen -->
+          <button type="button" class="zone-pin" style="top: 58%; left: 32%;" data-select-zone="1064">
+            <span class="pin-letter">C</span> <span data-pin-free="1064">22 lediga</span>
+          </button>
+
+          <!-- Zon A: Sjöparkeringen -->
+          <button type="button" class="zone-pin active-pin" style="top: 75%; left: 67%;" data-select-zone="1042">
+            <span class="pin-letter">A</span> <span data-pin-free="1042">30 lediga</span>
+          </button>
+
+          <!-- Zon E: Södra Skogsvägen -->
+          <button type="button" class="zone-pin" style="top: 76%; left: 13%;" data-select-zone="1086">
+            <span class="pin-letter">E</span> <span data-pin-free="1086">18 lediga</span>
+          </button>
+        </div>
+
+        <div class="map-hint-pill">Dra · Zooma · Vrid (Shift+dra)</div>
+
+        <!-- KOMPASS & ZOOMKONTROLLER -->
+        <div class="map-zoom-controls">
+          <button type="button" class="zoom-btn compass-btn" id="btn-compass" aria-label="Vänd kartan mot norr" title="Vänd kartan mot norr">
+            <svg class="compass-needle" id="compass-needle" viewBox="0 0 28 28" width="22" height="22">
+              <circle cx="14" cy="14" r="12.5" fill="none" stroke="#e4e4e7" stroke-width="1.2"/>
+              <text x="14" y="6.2" text-anchor="middle" font-size="5.5" font-weight="800" fill="#18181b" font-family="sans-serif">N</text>
+              <polygon points="14,7.5 16.8,14 14,12.8 11.2,14" fill="#FFA31A" stroke="#18181b" stroke-width="0.6" stroke-linejoin="round"/>
+              <polygon points="14,22.5 16.8,14 14,15.2 11.2,14" fill="#52525b"/>
+              <circle cx="14" cy="14" r="1.5" fill="#18181b"/>
+            </svg>
+          </button>
+          <button type="button" class="zoom-btn" id="btn-zoom-in" aria-label="Zooma in">+</button>
+          <button type="button" class="zoom-btn" id="btn-zoom-out" aria-label="Zooma ut">−</button>
+          <button type="button" class="zoom-btn zoom-reset" id="btn-zoom-reset" aria-label="Återställ vy">⟲</button>
+        </div>
+      </div>
+
+      <div class="sheet-card clickable" id="map-bottom-card">
+        <div class="row-between muted-xs">
+          <span class="kicker-accent">VALD PARKERINGSZON</span>
+          <span id="map-card-walk">2 min till fots</span>
+        </div>
+        <div class="zone-row">
+          <div class="zone-box-lg" id="map-card-letter">A</div>
+          <div class="zone-info">
+            <strong id="map-card-name">Sjöparkeringen</strong>
+            <span id="map-card-meta">1042 · 20 kr/tim</span>
+          </div>
+          <span class="arrow-diag">↗</span>
+        </div>
+        <div class="availability-pill">
+          <span><i class="dot-amber"></i> <span id="map-card-free">30 lediga</span></span>
+          <span class="muted" id="map-card-occ">28 av 58 upptagna</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 2: ZON · DETALJER ==================== -->
+    <section class="view" id="view-zone" data-tab="map">
+      <header class="top-bar">
+        <button type="button" class="brand-logo-wrap" data-go="map" aria-label="RUTA startsida">
+          <img src="logga.jpg"
+               data-fallbacks="logga.png,logo.jpg,logo.png,Gemini_Generated_Image_fs422ifs422ifs42_2.jpg,Gemini_Generated_Image_fs422ifs422ifs42.jpg"
+               alt="RUTA logotyp"
+               class="brand-logo-img">
+          <svg class="brand-logo-fallback" viewBox="0 0 260 100" aria-hidden="true">
+            <rect x="4" y="4" width="252" height="92" rx="16" fill="#FB9504"/>
+            <text x="26" y="71" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="60" letter-spacing="1">RUT</text>
+            <rect x="172" y="13" width="74" height="74" rx="12" fill="#104184"/>
+            <rect x="176" y="17" width="66" height="66" rx="9" fill="none" stroke="#FFFFFF" stroke-width="3.2"/>
+            <text x="209" y="70" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="56">A</text>
+          </svg>
+        </button>
+
+        <button class="icon-btn" data-go="map" aria-label="Stäng">✕</button>
+      </header>
+
+      <div class="map-area map-medium" id="zone-map-viewport">
+        <div class="map-canvas" id="zone-map-canvas">
+          <img src="karta.jpeg"
+               data-fallbacks="karta.jpg,Gemini_Generated_Image_3.jpeg,Gemini_Generated_Image_2.jpeg,Gemini_Generated_Image.jpeg,karta.png"
+               alt="Zonkarta"
+               class="map-original-img"
+               id="zone-detail-photo"
+               draggable="false">
+
+          <div class="zone-pin active-pin zone-focus-pin" id="zone-detail-pin">
+            <span class="pin-letter" id="zone-pin-letter">A</span>
+            <span id="zone-pin-name">Sjöparkeringen</span>
+          </div>
+        </div>
+
+        <div class="map-badge-dark" style="bottom: 14px; right: 16px;">
+          <span class="badge-a" id="zone-badge-letter">A</span> <span id="zone-badge-free">30 lediga</span>
+        </div>
+      </div>
+
+      <div class="screen-body">
+        <div class="row-between align-start">
+          <div>
+            <h2 class="title-lg" id="zone-title">Sjöparkeringen</h2>
+            <p class="subtitle" id="zone-subtitle">Sjövägen 12 · Zonkod 1042</p>
+          </div>
+          <button class="nav-icon-btn" data-go="map">✕</button>
+        </div>
+
+        <div class="availability-pill">
+          <span><i class="dot-amber"></i> <span id="zone-pill-free">30 lediga</span></span>
+          <span class="muted" id="zone-pill-occ">28 av 58 upptagna</span>
+        </div>
+
+        <div class="row-between info-strip">
+          <span id="zone-type-text">Utomhus · markerad zon A</span>
+          <strong class="rate-highlight" id="zone-rate-text">20 kr/tim</strong>
+        </div>
+
+        <div class="stack-sm mt-auto">
+          <button class="btn-primary" id="btn-zone-choose-spots">→ Visa parkeringsplatser</button>
+          <button class="btn-outline" id="btn-toggle-favorite">♡ Spara som favorit</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 3: PARKERINGSRUTOR · RIKTIG PARKERINGSKARTA ==================== -->
+    <section class="view" id="view-spots" data-tab="map">
+      <header class="nav-header">
+        <button class="nav-icon-btn" data-back>←</button>
+        <h3>Välj parkeringsruta</h3>
+        <span class="muted-xs" id="spots-zone-tag">Zon A</span>
+      </header>
+
+      <div class="screen-body">
+        <div class="legend-row">
+          <span><i class="leg-free"></i> Ledig ruta</span>
+          <span><i class="leg-taken"></i> Upptagen</span>
+          <span><i class="leg-selected"></i> Vald</span>
+        </div>
+
+        <div class="real-lot-map" id="interactive-parking-lot"></div>
+
+        <div class="mt-auto">
+          <div class="row-between selected-bar">
+            <span class="muted">Vald plats</span>
+            <strong id="selected-spot-label">Ruta 16</strong>
+          </div>
+          <div class="stack-sm">
+            <button class="btn-primary" id="btn-confirm-spot">→ Parkera på ruta 16</button>
+            <button class="btn-outline" data-back>Avbryt</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 4: BOKNING · TIMER-APP ==================== -->
+    <section class="view" id="view-booking" data-tab="map">
+      <header class="nav-header">
+        <button class="nav-icon-btn" data-back>←</button>
+        <h3>Boka parkering</h3>
+        <span class="dots">•••</span>
+      </header>
+
+      <div class="screen-body gap-md">
+        <div class="card-flat row-gap">
+          <div class="spot-badge-lg" id="book-spot-badge">A-16</div>
+          <div>
+            <strong id="book-zone-name">Sjöparkeringen</strong>
+            <p class="muted-xs" id="book-zone-sub">Zon 1042 · Sjövägen 12</p>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="plate-field">Registreringsnummer</label>
+          <div class="plate-input" id="plate-input-box">
+            <div class="row-gap-xs">
+              <span>🚗</span>
+              <input type="text" id="plate-field" class="plate-text-input" value="ABC 123" maxlength="8">
+            </div>
+            <span class="plate-country">SE</span>
+          </div>
+
+          <!-- SNABBVAL FÖR SPARADE FORDON -->
+          <div class="vehicle-chip-row" id="book-vehicle-chips"></div>
+
+          <!-- VARNING OM FORDONET REDAN ÄR PARKERAT -->
+          <div class="conflict-banner" id="plate-conflict-warning" style="display:none;"></div>
+        </div>
+
+        <!-- TIMER-VÄLJARE (DAGAR : TIMMAR : 15-MINUTER) -->
+        <div class="timer-app-card">
+          <div class="row-between timer-card-top">
+            <span>STÄLL IN PARKERINGSTID</span>
+            <span class="timer-rate-pill" id="book-rate-label">20 kr/tim</span>
+          </div>
+
+          <div class="timer-picker">
+            <div class="timer-col">
+              <button type="button" class="timer-step-btn" id="timer-days-up" aria-label="Öka dagar">▲</button>
+              <input type="number" id="timer-days-input" class="timer-digit-input" min="0" max="7" value="0">
+              <button type="button" class="timer-step-btn" id="timer-days-down" aria-label="Minska dagar">▼</button>
+              <span class="timer-col-label">DAGAR</span>
+            </div>
+
+            <span class="timer-colon">:</span>
+
+            <div class="timer-col">
+              <button type="button" class="timer-step-btn" id="timer-hours-up" aria-label="Öka timmar">▲</button>
+              <input type="number" id="timer-hours-input" class="timer-digit-input" min="0" max="23" value="02">
+              <button type="button" class="timer-step-btn" id="timer-hours-down" aria-label="Minska timmar">▼</button>
+              <span class="timer-col-label">TIMMAR</span>
+            </div>
+
+            <span class="timer-colon">:</span>
+
+            <div class="timer-col">
+              <button type="button" class="timer-step-btn" id="timer-mins-up" aria-label="Öka 15 minuter">▲</button>
+              <input type="number" id="timer-mins-input" class="timer-digit-input" min="0" max="45" step="15" value="00">
+              <button type="button" class="timer-step-btn" id="timer-mins-down" aria-label="Minska 15 minuter">▼</button>
+              <span class="timer-col-label">15-MIN</span>
+            </div>
+          </div>
+
+          <div class="row-between timer-card-bottom">
+            <span>Slutar</span>
+            <strong id="book-time-range">14:30–16:30</strong>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Betalningsmetod</label>
+          <div class="segmented" id="book-payment-seg">
+            <button type="button" class="seg-item active" data-val="Apple Pay">Apple Pay</button>
+            <button type="button" class="seg-item" data-val="Swish">Swish</button>
+            <button type="button" class="seg-item" data-val="Kort">Kort</button>
+          </div>
+          <span class="muted-xs" id="book-pay-hint">Debiteras per påbörjad minut via Apple Pay.</span>
+        </div>
+
+        <div class="mt-auto">
+          <div class="row-between total-row">
+            <div>
+              <strong>Totalt att betala</strong>
+              <p class="muted-xs" id="book-formula">2 timmar · 20 kr/tim</p>
+            </div>
+            <span class="price-lg" id="book-total-price">40 kr</span>
+          </div>
+          <button class="btn-primary" id="btn-pay-and-start">🔒 Starta parkering (max 40 kr)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 5: BEKRÄFTELSE · PARKERAD ==================== -->
+    <section class="view" id="view-confirmation" data-tab="map">
+      <header class="nav-header">
+        <button class="nav-icon-btn" data-go="map">←</button>
+        <h3>Bekräftelse</h3>
+        <button class="nav-icon-btn" data-go="map">✕</button>
+      </header>
+
+      <div class="screen-body text-center">
+        <div class="check-circle">✓</div>
+        <h2 class="title-lg">Du är parkerad.</h2>
+        <p class="subtitle center-sub" id="conf-subtitle">Din parkering har startat på Sjöparkeringen.</p>
+
+        <div class="card-flat text-left mt-sm">
+          <div class="row-between mb-sm">
+            <span class="spot-code-xl" id="conf-spot">A-16</span>
+            <span class="pill-active">● Aktiv</span>
+          </div>
+          <div class="kv-list">
+            <div class="row-between"><span class="muted">Fordon</span><strong id="conf-plate">ABC 123</strong></div>
+            <div class="row-between"><span class="muted">Tid</span><strong id="conf-time">14:30–16:30</strong></div>
+            <div class="row-between"><span class="muted" id="conf-pay-method">Maxbelopp (Apple Pay)</span><strong id="conf-paid">40 kr</strong></div>
+          </div>
+        </div>
+
+        <p class="muted-xs mt-sm" id="conf-availability-note">Ruta A-16 är nu upptagen.</p>
+
+        <div class="stack-sm mt-auto">
+          <button class="btn-primary" data-go="active">Visa aktiv parkering</button>
+          <button class="btn-outline" data-go="map">Till kartan (parkera fler fordon)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 6: AKTIV PARKERING · TIMER ==================== -->
+    <section class="view" id="view-active" data-tab="history">
+      <header class="nav-header">
+        <button class="nav-icon-btn" data-back>←</button>
+        <h3>Din parkering</h3>
+        <span class="dots">•••</span>
+      </header>
+
+      <div class="screen-body">
+        <!-- VÄXLARE OM FLERA PARKERINGAR ÄR AKTIVA SAMTIDIGT -->
+        <div class="active-switcher" id="active-session-switcher" style="display:none;"></div>
+
+        <div class="row-between">
+          <div>
+            <strong id="act-zone-name">Sjöparkeringen</strong>
+            <p class="muted-xs" id="act-zone-sub">Zon 1042 · Ruta A-16</p>
+          </div>
+          <span class="pill-active">● Aktiv</span>
+        </div>
+
+        <div class="timer-wrap">
+          <svg class="timer-ring" viewBox="0 0 180 180">
+            <circle cx="90" cy="90" r="76" stroke="#ffedd1" stroke-width="6" fill="none"/>
+            <circle id="timer-progress-ring" cx="90" cy="90" r="76" stroke="#FFA31A" stroke-width="6" fill="none"
+                    stroke-dasharray="477" stroke-dashoffset="0" stroke-linecap="round"
+                    transform="rotate(-90 90 90)"/>
+          </svg>
+          <div class="timer-text">
+            <span class="timer-label">ÅTERSTÅENDE TID</span>
+            <strong class="timer-value" id="act-remaining-text">02:00:00</strong>
+            <span class="muted-xs" id="act-end-text">Slutar 16:30</span>
+          </div>
+        </div>
+
+        <div class="card-flat kv-list">
+          <div class="row-between"><span class="muted">Fordon</span><strong id="act-plate">ABC 123</strong></div>
+          <div class="row-between"><span class="muted">Parkeringstid</span><strong id="act-time-range">14:30–16:30</strong></div>
+          <div class="row-between"><span class="muted" id="act-duration-label">Upplupet · 1 påbörjade min</span><strong id="act-paid">0,33 kr</strong></div>
+        </div>
+
+        <p class="muted-xs" id="act-reminder-note">🔔 Påminnelse aktiv 15 min före sluttid.</p>
+
+        <div class="stack-sm mt-auto">
+          <button class="btn-primary" data-go="extend">+ Förläng parkering</button>
+          <button class="btn-outline" id="btn-end-parking">Avsluta parkering</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 7: FÖRLÄNG PARKERING ==================== -->
+    <section class="view" id="view-extend" data-tab="history">
+      <header class="nav-header">
+        <button class="nav-icon-btn" data-back>←</button>
+        <h3>Förläng parkering</h3>
+        <span class="dots">•••</span>
+      </header>
+
+      <div class="screen-body gap-md">
+        <div class="row-between">
+          <div>
+            <strong class="spot-code-lg" id="ext-spot">A-16</strong>
+            <p class="muted-xs" id="ext-sub">Sjöparkeringen · ABC 123</p>
+          </div>
+          <span class="pill-active">● Aktiv</span>
+        </div>
+
+        <div>
+          <strong>Hur länge till?</strong>
+          <p class="muted-xs">Lägg till tid (max 7 dagar totalt).</p>
+          <div class="pill-group mt-xs" id="ext-duration-pills">
+            <button type="button" class="choice-pill" data-mins="15">+ 15 min</button>
+            <button type="button" class="choice-pill active" data-mins="60">+ 1 timme</button>
+            <button type="button" class="choice-pill" data-mins="1440">+ 1 dag</button>
+          </div>
+        </div>
+
+        <div class="card-flat kv-list">
+          <div class="row-between"><span class="muted">Nuvarande sluttid</span><strong id="ext-old-end">16:30</strong></div>
+          <div class="row-between align-center"><span class="muted">Ny sluttid</span><strong class="time-big" id="ext-new-end">17:30</strong></div>
+          <div class="row-between border-top-subtle"><span class="muted">Extra tid</span><strong id="ext-extra-formula">1 timme · 20 kr/tim</strong></div>
+          <div class="row-between"><span class="muted">Totalt efter förlängning</span><strong id="ext-new-total">60 kr</strong></div>
+        </div>
+
+        <div class="row-between small-text">
+          <span class="muted">Betalningsmetod</span>
+          <strong id="ext-pay-method">Apple Pay</strong>
+        </div>
+
+        <div class="mt-auto">
+          <div class="row-between total-row">
+            <strong>Att betala nu</strong>
+            <span class="price-lg" id="ext-pay-now">20 kr</span>
+          </div>
+          <button class="btn-primary" id="btn-confirm-extend">🔒 Förläng (+20 kr max)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 8: AVSLUTAD PARKERING (KVITTOVY) ==================== -->
+    <section class="view" id="view-ended" data-tab="history">
+      <header class="nav-header">
+        <button class="nav-icon-btn" data-go="map">←</button>
+        <h3>Avslutad parkering</h3>
+        <span class="dots">•••</span>
+      </header>
+
+      <div class="screen-body text-center">
+        <div class="spot-outline-box" id="end-spot">A-16</div>
+        <h2 class="title-lg">Tack för den här gången.</h2>
+        <p class="subtitle center-sub" id="end-subtitle">Din parkering avslutades.<br>Rutan är ledig igen.</p>
+
+        <div class="card-flat text-left kv-list mt-sm">
+          <strong id="end-zone-line">Sjöparkeringen · Zon 1042</strong>
+          <div class="row-between"><span class="muted">Fordon</span><strong id="end-plate">ABC 123</strong></div>
+          <div class="row-between"><span class="muted" id="end-duration">2 timmar</span><strong id="end-range">14:30–16:30</strong></div>
+          <div class="row-between border-top-subtle"><span class="muted" id="end-pay-label">Fakturerat (Apple Pay)</span><strong id="end-paid">40 kr</strong></div>
+        </div>
+
+        <div class="stack-sm mt-auto">
+          <button class="btn-outline" id="btn-show-last-receipt">🧾 Visa kvitto</button>
+          <button class="btn-primary" data-go="map">⊞ Hitta ny parkering</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 9: SPARADE FAVORITER ==================== -->
+    <section class="view" id="view-saved" data-tab="saved">
+      <header class="top-bar">
+        <h2 class="title-xl">Sparade</h2>
+        <button class="icon-btn" data-go="map" title="Lägg till från kartan">+</button>
+      </header>
+
+      <div class="screen-body gap-sm">
+        <div>
+          <strong>Nära till dina platser.</strong>
+          <p class="muted-xs" id="saved-count-label">2 favoriter · tillgänglighet just nu</p>
+        </div>
+
+        <div class="map-area map-mini">
+          <img src="karta.jpeg"
+               data-fallbacks="karta.jpg,Gemini_Generated_Image_3.jpeg,Gemini_Generated_Image_2.jpeg,Gemini_Generated_Image.jpeg,karta.png"
+               alt="Favoriter på karta"
+               class="map-original-img"
+               style="transform: translate(-15%, -52%) scale(1.1);"
+               draggable="false">
+          <div class="map-badge-dark" style="bottom: 10px; right: 12px;">
+            <span class="badge-a">A</span> <span id="saved-mini-free">30 lediga</span>
+          </div>
+        </div>
+
+        <div id="saved-cards-container" class="stack-sm"></div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 10: AVSLUTADE PARKERINGAR ==================== -->
+    <section class="view" id="view-history" data-tab="history">
+      <header class="top-bar">
+        <h2 class="title-xl">Avslutade parkeringar</h2>
+        <span class="muted-xs" id="history-count-label">3 kvitton</span>
+      </header>
+
+      <div class="screen-body gap-sm">
+        <div id="active-session-banner" style="display:none;">
+          <span class="section-kicker" id="active-banner-kicker">PÅGÅENDE JUST NU</span>
+          <div class="stack-sm mt-xs" id="active-sessions-list"></div>
+        </div>
+
+        <span class="section-kicker">TIDIGARE AVSLUTADE</span>
+
+        <div class="history-list" id="history-list-container"></div>
+      </div>
+    </section>
+
+    <!-- ==================== VY 11: PROFIL (ETT KONTO) ==================== -->
+    <section class="view" id="view-profile" data-tab="profile">
+      <header class="top-bar">
+        <h2 class="title-xl">Profil</h2>
+      </header>
+
+      <div class="screen-body gap-sm">
+        <div class="card-flat row-between">
+          <div class="row-gap">
+            <div class="avatar-circle" id="profile-avatar">AL</div>
+            <div>
+              <strong id="profile-name">Alex Lind</strong>
+              <p class="muted-xs" id="profile-email">alex.lind@info.se</p>
+            </div>
+          </div>
+          <button type="button" class="pill-btn-sm" id="btn-edit-account">Redigera</button>
+        </div>
+
+        <div class="settings-list">
+          <button type="button" class="settings-item" id="btn-manage-vehicles">
+            <span class="s-icon">🚗</span>
+            <div class="s-text">
+              <strong>Mina fordon</strong>
+              <span id="profile-vehicle-sub">ABC 123 · Tryck för att byta eller lägga till</span>
+            </div>
+            <span class="muted">›</span>
+          </button>
+
+          <button type="button" class="settings-item" id="btn-cycle-payment">
+            <span class="s-icon">💳</span>
+            <div class="s-text">
+              <strong>Betalningsmetoder</strong>
+              <span id="profile-pay-sub">Apple Pay (standard) · Tryck för att byta</span>
+            </div>
+            <span class="muted">›</span>
+          </button>
+
+          <div class="settings-item">
+            <span class="s-icon">🔔</span>
+            <div class="s-text">
+              <strong>Notiser och påminnelser</strong>
+              <span id="profile-reminder-sub">Påminn 15 min före sluttid</span>
+            </div>
+            <button type="button" class="toggle-switch active" id="btn-toggle-reminder" aria-label="Växla påminnelse"></button>
+          </div>
+
+          <button type="button" class="settings-item" id="btn-toggle-help">
+            <span class="s-icon">?</span>
+            <div class="s-text">
+              <strong>Hjälp och support</strong>
+              <span>Vanliga frågor &amp; kundservice</span>
+            </div>
+            <span class="muted" id="help-chevron">›</span>
+          </button>
+          <div class="accordion-panel" id="help-panel" style="display:none;">
+            Support dygnet runt via <strong>support@ruta.se</strong> eller 010-123 45 67.
+          </div>
+
+          <button type="button" class="settings-item" id="btn-toggle-privacy">
+            <span class="s-icon">🛡</span>
+            <div class="s-text">
+              <strong>Integritet och villkor</strong>
+              <span>GDPR &amp; användarvillkor</span>
+            </div>
+            <span class="muted" id="privacy-chevron">›</span>
+          </button>
+          <div class="accordion-panel" id="privacy-panel" style="display:none;">
+            Dina kontouppgifter och kvitton krypteras och delas aldrig med tredje part.
+          </div>
+        </div>
+
+        <div class="row-between mt-auto muted-xs">
+          <span>Inloggad</span>
+          <span>RUTA 1.0 · PWA</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== NEDRE TABBMENY ==================== -->
+    <nav class="tab-bar" id="main-tab-bar">
+      <button type="button" class="tab active" data-nav-tab="map">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        <span>Karta</span>
+      </button>
+      <button type="button" class="tab" data-nav-tab="saved">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span>Sparade</span>
+      </button>
+      <button type="button" class="tab" data-nav-tab="history">
+        <div class="tab-icon-wrap">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 16V8h4a2.5 2.5 0 0 1 0 5H9"/></svg>
+          <span class="tab-badge-dot" id="tab-active-dot" style="display:none;"></span>
+        </div>
+        <span>Avslutade parkeringar</span>
+      </button>
+      <button type="button" class="tab" data-nav-tab="profile">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span>Profil</span>
+      </button>
+    </nav>
+
+    <!-- MODAL (KVITTO / REDIGERA KONTO / FORDON) -->
+    <div class="modal-backdrop" id="app-modal" style="display:none;">
+      <div class="modal-card">
+        <div class="row-between mb-sm">
+          <strong id="modal-title">Detaljer</strong>
+          <button type="button" class="nav-icon-btn" id="btn-close-modal">✕</button>
+        </div>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="app-toast"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
